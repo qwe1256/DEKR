@@ -52,6 +52,11 @@ def parse_args():
                         help="Modify config options using the command-line",
                         default=None,
                         nargs=argparse.REMAINDER)
+    parser.add_argument('--pre_trained',
+                        default=None,
+                        type=str,
+                        help='location of pre_trained pose model')
+    
 
     # distributed training
     parser.add_argument('--gpu',
@@ -130,7 +135,7 @@ def main_worker(
     torch.backends.cudnn.deterministic = cfg.CUDNN.DETERMINISTIC
     torch.backends.cudnn.enabled = cfg.CUDNN.ENABLED
 
-    args.gpu = gpu
+    args.gpu = int(gpu)
 
     if args.gpu is not None:
         print("Use GPU: {} for training".format(args.gpu))
@@ -255,7 +260,7 @@ def main_worker(
 
         # train one epoch
         do_train(cfg, model, train_loader, loss_factory, optimizer, epoch,
-                 final_output_dir, tb_log_dir, writer_dict)
+                 final_output_dir, tb_log_dir, writer_dict, args.gpu)
 
         lr_scheduler.step()
 
@@ -275,7 +280,7 @@ def main_worker(
                 'epoch': epoch + 1,
                 'model': cfg.MODEL.NAME,
                 'state_dict': model.state_dict(),
-                'best_state_dict': model.module.state_dict(),
+                'best_state_dict': model.state_dict(),
                 'perf': perf_indicator,
                 'optimizer': optimizer.state_dict(),
             }, best_model, final_output_dir)
@@ -286,7 +291,7 @@ def main_worker(
 
     logger.info('saving final model state to {}'.format(
         final_model_state_file))
-    torch.save(model.module.state_dict(), final_model_state_file)
+    torch.save(model.state_dict(), final_model_state_file)
     writer_dict['writer'].close()
 
 

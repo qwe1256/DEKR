@@ -17,7 +17,7 @@ from utils.utils import AverageMeter
 
 
 def do_train(cfg, model, data_loader, loss_factory, optimizer, epoch,
-             output_dir, tb_log_dir, writer_dict):
+             output_dir, tb_log_dir, writer_dict, gpu):
     logger = logging.getLogger("Training")
 
     batch_time = AverageMeter()
@@ -32,6 +32,7 @@ def do_train(cfg, model, data_loader, loss_factory, optimizer, epoch,
     for i, (image, heatmap, mask, offset, offset_w) in enumerate(data_loader):
         data_time.update(time.time() - end)
 
+        image = image.to("cuda:0")
         pheatmap, poffset = model(image)
 
         heatmap = heatmap.cuda(non_blocking=True)
